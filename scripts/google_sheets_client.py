@@ -92,9 +92,7 @@ class GoogleSheetsClient:
                 for row, values in chunk
             ]
             if body:
-                worksheet.spreadsheet.values_batch_update(
-                    body, value_input_option="USER_ENTERED"
-                )
+                worksheet.batch_update(body, value_input_option="USER_ENTERED")
                 updated_count += len(chunk)
 
         inserted_count = len(new_rows)
