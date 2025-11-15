@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Dict, Iterable, List, Optional, Tuple
 
 import gspread
 from google.oauth2.service_account import Credentials
@@ -54,6 +54,7 @@ class GoogleSheetsClient:
         if not rows:
             return
         worksheet = self._get_worksheet()
+        self._ensure_header(worksheet)
         existing_records = worksheet.get_all_records()
         index_by_post: Dict[str, int] = {}
         for idx, record in enumerate(existing_records, start=2):
@@ -63,6 +64,8 @@ class GoogleSheetsClient:
 
         timestamp = datetime.now(timezone.utc).isoformat()
 
+        updates: List[Tuple[int, List[str]]] = []
+        new_rows: List[List[str]] = []
         next_row = len(existing_records) + 2
 
         for row in rows:
@@ -70,12 +73,27 @@ class GoogleSheetsClient:
             formatted_row = self._format_row(row, timestamp)
             if post_id in index_by_post:
                 row_number = index_by_post[post_id]
-                range_ref = f"A{row_number}:K{row_number}"
-                worksheet.update(range_ref, [formatted_row], value_input_option="USER_ENTERED")
+                updates.append((row_number, formatted_row))
             else:
-                worksheet.append_row(formatted_row, value_input_option="USER_ENTERED")
+                new_rows.append(formatted_row)
                 index_by_post[post_id] = next_row
                 next_row += 1
+
+        for chunk in self._chunk_updates(updates, size=50):
+            body = [
+                {
+                    "range": f"{worksheet.title}!A{row}:K{row}",
+                    "values": [values],
+                }
+                for row, values in chunk
+            ]
+            if body:
+                worksheet.spreadsheet.values_batch_update(
+                    body, value_input_option="USER_ENTERED"
+                )
+
+        if new_rows:
+            worksheet.append_rows(new_rows, value_input_option="USER_ENTERED")
 
     @staticmethod
     def _format_row(row: Dict, timestamp: str) -> List[str]:
@@ -111,3 +129,21 @@ class GoogleSheetsClient:
             "Contenido_Relevante": contenido_relevante_str,
         }
         return [str(ordered[column]) for column in COLUMNS]
+
+    def _ensure_header(self, worksheet: gspread.Worksheet) -> None:
+        current_header = worksheet.row_values(1)
+        if current_header != COLUMNS:
+            worksheet.update("A1:K1", [COLUMNS], value_input_option="RAW")
+
+    @staticmethod
+    def _chunk_updates(
+        updates: Iterable[Tuple[int, List[str]]], size: int
+    ) -> Iterable[List[Tuple[int, List[str]]]]:
+        chunk: List[Tuple[int, List[str]]] = []
+        for item in sorted(updates, key=lambda pair: pair[0]):
+            chunk.append(item)
+            if len(chunk) >= size:
+                yield chunk
+                chunk = []
+        if chunk:
+            yield chunk
