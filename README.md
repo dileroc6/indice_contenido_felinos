@@ -1,6 +1,6 @@
 # indice_contenido_felinos
 
-Pipeline para construir y mantener un índice de contenido a partir de todos los posts publicados en WordPress, enriquecido con metadata generada por OpenAI y almacenado en la hoja `indice_contenido` del archivo de Google Sheets **SEOMasterDashboard_Felinos**.
+Pipeline automatizado que, cada semana o a demanda, toma todos los posts de tu WordPress, usa OpenAI para generar resumen y metadata SEO, y actualiza la hoja `SEOMasterDashboard_Felinos/indice_contenido` en Google Sheets duplicando/actualizando filas según `Post_ID`; todo corre vía GitHub Actions con Python 3.11 y depende de secretos para WordPress, OpenAI y el service account de Google.
 
 ## Estructura del proyecto
 
