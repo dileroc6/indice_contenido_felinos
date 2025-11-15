@@ -1,6 +1,7 @@
 import json
 import os
-from typing import Dict, Optional
+import re
+from typing import Any, Dict, Optional
 
 from openai import OpenAI
 
@@ -35,6 +36,41 @@ class AIIndexer:
             f"{post.get('content', '')}"
         )
 
+    @staticmethod
+    def _sanitize_response(raw_text: str) -> str:
+        content = raw_text.strip()
+        if not content:
+            raise ValueError("La respuesta de OpenAI llegó vacía.")
+
+        if content.startswith("```"):
+            content = content[3:]
+            if content.lower().startswith("json"):
+                content = content[4:]
+            content = content.strip()
+            if content.endswith("```"):
+                content = content[:-3].strip()
+
+        content = content.replace("***", "").strip()
+
+        start = content.find("{")
+        end = content.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            content = content[start : end + 1]
+
+        return content
+
+    @staticmethod
+    def _normalise_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
+        score = payload.get("Score_IA")
+        if isinstance(score, str):
+            score = score.strip()
+            match = re.search(r"\d+", score)
+            if match:
+                payload["Score_IA"] = int(match.group())
+        elif isinstance(score, (int, float)):
+            payload["Score_IA"] = int(score)
+        return payload
+
     def generate_index_fields(self, post: Dict) -> Dict:
         prompt = self.build_prompt(post)
         response = self.client.responses.create(
@@ -48,9 +84,10 @@ class AIIndexer:
             ],
             temperature=0.2,
         )
-        content = response.output_text
+        raw_text = response.output_text or ""
+        content = self._sanitize_response(raw_text)
         try:
             parsed = json.loads(content)
         except json.JSONDecodeError as exc:
             raise ValueError(f"La respuesta de OpenAI no es JSON válido: {content}") from exc
-        return parsed
+        return self._normalise_payload(parsed)
