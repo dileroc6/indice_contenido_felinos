@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 from datetime import datetime, timezone
 from typing import Dict, Iterable, List, Optional, Tuple
@@ -22,6 +23,8 @@ COLUMNS = [
     "Score_IA",
     "Contenido_Relevante",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 class GoogleSheetsClient:
@@ -79,6 +82,7 @@ class GoogleSheetsClient:
                 index_by_post[post_id] = next_row
                 next_row += 1
 
+        updated_count = 0
         for chunk in self._chunk_updates(updates, size=50):
             body = [
                 {
@@ -91,9 +95,17 @@ class GoogleSheetsClient:
                 worksheet.spreadsheet.values_batch_update(
                     body, value_input_option="USER_ENTERED"
                 )
+                updated_count += len(chunk)
 
+        inserted_count = len(new_rows)
         if new_rows:
             worksheet.append_rows(new_rows, value_input_option="USER_ENTERED")
+
+        logger.info(
+            "Google Sheets sincronizado: %s filas actualizadas, %s filas insertadas",
+            updated_count,
+            inserted_count,
+        )
 
     @staticmethod
     def _format_row(row: Dict, timestamp: str) -> List[str]:

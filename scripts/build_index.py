@@ -1,3 +1,4 @@
+import logging
 from typing import Dict, List
 
 from ai_indexer import AIIndexer
@@ -5,9 +6,12 @@ from google_sheets_client import GoogleSheetsClient
 from wordpress_client import WordPressClient
 
 
+logger = logging.getLogger(__name__)
+
+
 def build_rows(posts: List[Dict], ai_indexer: AIIndexer) -> List[Dict]:
     rows: List[Dict] = []
-    for post in posts:
+    for index, post in enumerate(posts, start=1):
         ai_fields = ai_indexer.generate_index_fields(post)
         keywords_sec = ai_fields.get("Keywords_Secundarias", [])
         if isinstance(keywords_sec, str):
@@ -31,20 +35,29 @@ def build_rows(posts: List[Dict], ai_indexer: AIIndexer) -> List[Dict]:
                 "Contenido_Relevante": contenido_relevante,
             }
         )
+        if index % 10 == 0:
+            logger.info("Metadatos generados para %s posts", index)
     return rows
 
 
 def main() -> None:
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+    logger.info("Inicio del proceso de construcción de índice")
     wordpress_client = WordPressClient()
     ai_indexer = AIIndexer()
     sheets_client = GoogleSheetsClient()
 
+    logger.info("Recuperando posts desde WordPress")
     posts = wordpress_client.fetch_all_posts()
-    print(f"Posts recuperados desde WordPress: {len(posts)}")
+    logger.info("Posts recuperados desde WordPress: %s", len(posts))
+
+    logger.info("Generando metadata con OpenAI")
     rows = build_rows(posts, ai_indexer)
-    print(f"Filas a sincronizar en Google Sheets: {len(rows)}")
+    logger.info("Filas listas para sincronizar en Google Sheets: %s", len(rows))
+
+    logger.info("Sincronizando información en Google Sheets")
     sheets_client.upsert_posts(rows)
-    print("Proceso completado correctamente.")
+    logger.info("Proceso completado correctamente")
 
 
 if __name__ == "__main__":

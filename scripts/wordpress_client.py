@@ -1,3 +1,4 @@
+import logging
 import os
 from typing import Dict, List, Optional
 
@@ -18,6 +19,7 @@ class WordPressClient:
         self.application_password = application_password or os.getenv(
             "WORDPRESS_APPLICATION_PASSWORD"
         )
+        self.logger = logging.getLogger(__name__)
         if not self.base_url:
             raise ValueError("WORDPRESS_URL no está configurado.")
         if not self.username or not self.application_password:
@@ -43,6 +45,7 @@ class WordPressClient:
 
         while page <= total_pages:
             params = {"per_page": per_page, "page": page}
+            self.logger.info("Solicitando página %s de WordPress", page)
             response = self._get(endpoint, params=params)
             raw_total = response.headers.get("X-WP-TotalPages")
             if raw_total:
