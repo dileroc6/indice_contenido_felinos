@@ -89,7 +89,7 @@ export OPENAI_API_KEY="sk-..."
 
 El archivo `.github/workflows/build-indice.yml` incluye:
 
-- Programación con cron `0 4 * * 1` (lunes 04:00 UTC).
+- Programación con cron `0 8 * * *` (diario 08:00 UTC / 03:00 Bogotá).
 - Activación manual con `workflow_dispatch`.
 - Instalación automática de dependencias.
 - Ejecución del script principal con los secretos expuestos como variables de entorno.
