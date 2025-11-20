@@ -10,6 +10,7 @@ Pipeline automatizado que, cada semana o a demanda, toma todos los posts de tu W
 	- `build_index.py`: Script orquestador que coordina la obtención de posts, enriquecimiento con IA y escritura en Google Sheets.
 	- `wordpress_client.py`: Cliente para consumir la API REST de WordPress y manejar la paginación.
 	- `ai_indexer.py`: Encapsula la llamada a OpenAI y la generación del prompt por post.
+   - `notifier.py`: Gestiona el envío opcional de notificaciones vía Telegram.
 	- `google_sheets_client.py`: Gestiona la inserción y actualización de filas en la hoja de cálculo.
 
 ## Flujo general
@@ -66,6 +67,8 @@ Configura los siguientes secretos en el repositorio de GitHub (`Settings` → `S
 - `WORDPRESS_APPLICATION_PASSWORD`
 - `GOOGLE_SERVICE_ACCOUNT_KEY` (JSON completo del service account)
 - `OPENAI_API_KEY`
+- `TELEGRAM_BOT_TOKEN` (opcional, para notificación)
+- `TELEGRAM_CHAT_ID` (opcional, para notificación)
 
 Asegúrate de compartir la hoja `SEOMasterDashboard_Felinos` con el correo del service account.
 
@@ -92,7 +95,7 @@ El archivo `.github/workflows/build-indice.yml` incluye:
 - Programación con cron `0 9 1 * *` (primer día de cada mes 09:00 UTC / 04:00 Bogotá).
 - Activación manual con `workflow_dispatch`.
 - Instalación automática de dependencias.
-- Ejecución del script principal con los secretos expuestos como variables de entorno.
+- Ejecución del script principal con los secretos expuestos como variables de entorno y envío opcional de notificación a Telegram.
 
 ## Próximos pasos sugeridos
 

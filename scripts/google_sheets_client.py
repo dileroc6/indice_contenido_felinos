@@ -53,9 +53,9 @@ class GoogleSheetsClient:
         spreadsheet = self.client.open_by_key(self.sheet_id)
         return spreadsheet.worksheet(self.worksheet_name)
 
-    def upsert_posts(self, rows: List[Dict]) -> None:
+    def upsert_posts(self, rows: List[Dict]) -> Tuple[int, int]:
         if not rows:
-            return
+            return (0, 0)
         worksheet = self._get_worksheet()
         self._ensure_header(worksheet)
         existing_records = worksheet.get_all_records()
@@ -104,6 +104,7 @@ class GoogleSheetsClient:
             updated_count,
             inserted_count,
         )
+        return (updated_count, inserted_count)
 
     @staticmethod
     def _format_row(row: Dict, timestamp: str) -> List[str]:
