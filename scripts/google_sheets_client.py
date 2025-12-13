@@ -84,15 +84,20 @@ class GoogleSheetsClient:
 
         updated_count = 0
         for chunk in self._chunk_updates(updates, size=50):
-            body = [
+            data = [
                 {
                     "range": f"A{row}:K{row}",
                     "values": [values],
                 }
                 for row, values in chunk
             ]
-            if body:
-                worksheet.batch_update(body, value_input_option="USER_ENTERED")
+            if data:
+                worksheet.spreadsheet.values_batch_update(
+                    {
+                        "valueInputOption": "USER_ENTERED",
+                        "data": data,
+                    }
+                )
                 updated_count += len(chunk)
 
         inserted_count = len(new_rows)
