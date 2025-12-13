@@ -86,7 +86,7 @@ class GoogleSheetsClient:
         for chunk in self._chunk_updates(updates, size=50):
             body = [
                 {
-                    "range": f"{worksheet.title}!A{row}:K{row}",
+                    "range": f"A{row}:K{row}",
                     "values": [values],
                 }
                 for row, values in chunk
