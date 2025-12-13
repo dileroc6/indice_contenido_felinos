@@ -93,10 +93,9 @@ class GoogleSheetsClient:
             ]
             if data:
                 worksheet.spreadsheet.values_batch_update(
-                    {
-                        "valueInputOption": "USER_ENTERED",
-                        "data": data,
-                    }
+                    spreadsheetId=worksheet.spreadsheet.id,
+                    valueInputOption="USER_ENTERED",
+                    body={"data": data},
                 )
                 updated_count += len(chunk)
 
