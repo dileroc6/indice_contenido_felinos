@@ -84,21 +84,17 @@ class GoogleSheetsClient:
 
         updated_count = 0
         for chunk in self._chunk_updates(updates, size=50):
-            data = [
+            requests = [
                 {
-                    "range": f"{self.worksheet_name}!A{row}:K{row}",
+                    "range": f"A{row}:K{row}",
                     "values": [values],
                 }
                 for row, values in chunk
             ]
-            if data:
-                self.client.request(
-                    "post",
-                    f"spreadsheets/{self.sheet_id}/values:batchUpdate",
-                    json={
-                        "valueInputOption": "USER_ENTERED",
-                        "data": data,
-                    },
+            if requests:
+                worksheet.batch_update(
+                    requests,
+                    value_input_option="USER_ENTERED",
                 )
                 updated_count += len(chunk)
 
