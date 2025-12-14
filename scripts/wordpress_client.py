@@ -3,6 +3,8 @@ import os
 from typing import Dict, List, Optional
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 
 class WordPressClient:
@@ -13,6 +15,7 @@ class WordPressClient:
         base_url: Optional[str] = None,
         username: Optional[str] = None,
         application_password: Optional[str] = None,
+        timeout: float = 30.0,
     ) -> None:
         self.base_url = (base_url or os.getenv("WORDPRESS_URL", "")).rstrip("/")
         self.username = username or os.getenv("WORDPRESS_USERNAME")
@@ -20,19 +23,37 @@ class WordPressClient:
             "WORDPRESS_APPLICATION_PASSWORD"
         )
         self.logger = logging.getLogger(__name__)
+        self.timeout = timeout
         if not self.base_url:
             raise ValueError("WORDPRESS_URL no está configurado.")
         if not self.username or not self.application_password:
             raise ValueError("Credenciales de WordPress incompletas.")
 
+        self.session = requests.Session()
+        retry_strategy = Retry(
+            total=5,
+            connect=5,
+            read=3,
+            backoff_factor=2,
+            status_forcelist=(500, 502, 503, 504),
+            allowed_methods=("GET",),
+        )
+        adapter = HTTPAdapter(max_retries=retry_strategy)
+        self.session.mount("http://", adapter)
+        self.session.mount("https://", adapter)
+
     def _get(self, endpoint: str, **kwargs) -> requests.Response:
         url = f"{self.base_url}{endpoint}"
-        response = requests.get(
-            url,
-            auth=(self.username, self.application_password),
-            timeout=30,
-            **kwargs,
-        )
+        try:
+            response = self.session.get(
+                url,
+                auth=(self.username, self.application_password),
+                timeout=self.timeout,
+                **kwargs,
+            )
+        except requests.RequestException as exc:
+            self.logger.warning("Fallo al conectar con WordPress: %s", exc)
+            raise
         response.raise_for_status()
         return response
 
