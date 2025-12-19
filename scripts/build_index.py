@@ -46,6 +46,7 @@ def main() -> None:
     logger.info("Inicio del proceso de construcción de índice")
     notifier = TelegramNotifier()
     posts_count = 0
+    updated_count = 0
     inserted_count = 0
 
     try:
@@ -63,13 +64,13 @@ def main() -> None:
         logger.info("Filas listas para sincronizar en Google Sheets: %s", len(rows))
 
         logger.info("Sincronizando información en Google Sheets")
-        _, inserted_count = sheets_client.upsert_posts(rows)
+        updated_count, inserted_count = sheets_client.upsert_posts(rows)
         logger.info("Proceso completado correctamente")
 
-        notifier.notify(True, posts_count, inserted_count)
+        notifier.notify(True, posts_count, updated_count, inserted_count)
     except Exception as exc:  # noqa: BLE001
         logger.exception("Error durante la construcción del índice")
-        notifier.notify(False, posts_count, inserted_count, str(exc))
+        notifier.notify(False, posts_count, updated_count, inserted_count, str(exc))
         raise
 
 

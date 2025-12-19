@@ -23,6 +23,7 @@ class TelegramNotifier:
         self,
         success: bool,
         total_posts: int,
+        updated_posts: int,
         inserted_posts: int,
         error_message: Optional[str] = None,
     ) -> None:
@@ -37,6 +38,7 @@ class TelegramNotifier:
             "🚀 Pipeline Indice Contenido",
             f"📅 Ejecución: {timestamp}",
             f"📝 Posts totales: {total_posts}",
+            f"♻️ Filas actualizadas: {updated_posts}",
             f"➕ Nuevos insertados: {inserted_posts}",
             f"{status_icon} Estado: {status_text}",
         ]
